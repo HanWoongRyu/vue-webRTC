@@ -5,6 +5,7 @@ import VideoDisplay from './components/VideoDisplay.vue';
 import CallControls from './components/CallControls.vue';
 
 const peer = ref(null);
+const myID = ref(null)
 const localStream = ref(null);
 const customPeerId = ref('');
 const audioInputs = ref([]);
@@ -22,7 +23,9 @@ onMounted(async () => {
 // peer 초기화
 const initPeer = async () => {
   if (peer.value) {
-    peer.value.destroy(); // Ensure old peer connections are closed
+    peer.value.destroy(); // 시작할때 피어 파괴
+    peer.value = null;  // peer를 null로 설정
+
   }
 
   try {
@@ -31,12 +34,26 @@ const initPeer = async () => {
       audio: { deviceId: selectedAudioInput.value ? { exact: selectedAudioInput.value } : undefined }
     });
     localStream.value = stream;
+    myID.value= customPeerId.value
     peer.value = new Peer(customPeerId.value);
 
+    peer.value.on('open', id => { //peer를 성공적으로 생성하면 받을 수 있음
+      console.log(`Peer 연결 성공, ID: ${id}`);
+    });
+
+    peer.value.on('error', error => { //peer를 성공적으로 생성하면 받을 수 있음
+      console.error("peer 설정 error", error);
+      peer.value = null; 
+    });
+
+
+
     peer.value.on('call', call => {
-      if (call.metadata.type !=="isol") {
+      if (call.metadata.type !=="WebRTC 테슷흐") {
         return
       }
+      console.log("전화가 왔습니다!", call.metadata.id)
+
       call.answer(localStream.value);
       call.on('stream', remoteStream => {
         const remoteVideo = document.getElementById('remote-video');
@@ -44,7 +61,7 @@ const initPeer = async () => {
       });
     });
   } catch (error) {
-    console.error('Failed to initialize peer or media devices', error);
+    console.error('피어 혹은 미디어 찾기 실패', error);
   }
 };
 
@@ -55,7 +72,7 @@ function toggleMute() {
 }
 
 function callPeer(id) {
-  const options = {metadata: {"type":"isol"}};
+  const options = {metadata: {"type":"WebRTC 테슷흐", "id" : myID.value}};
   const call = peer.value.call(id, localStream.value, options);
   call.on('stream', remoteStream => {
     const remoteVideo = document.getElementById('remote-video');
