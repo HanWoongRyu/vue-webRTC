@@ -83,11 +83,11 @@ const initPeer = async () => {
         }
         else if(data === 'reject') {
           console.log('상대방이 전화를 거절했습니다.')
-          endCall()
+          terminateCall()
         }
         else if(data === 'cancel') {
           console.log("전화를 취소했습니다.")
-          endCall()
+          terminateCall()
         }
       });
     });
@@ -159,7 +159,7 @@ function rejectCall() {
           conn.send('reject');
           conn.close();
         });
-    endCall()
+    terminateCall()
   }
 }
 
@@ -171,11 +171,23 @@ function cancelCall() {
           conn.send('cancel');
           conn.close();
         });
-    endCall()
+    terminateCall()
   }
 }
 
 function endCall() {
+  if (currentCall.value){
+    console.log("통화 종료 누름!")
+    const conn = peer.value.connect(currentCall.value.peer);
+        conn.on('open', () => {
+          conn.send('cancel');
+          conn.close();
+        });
+    terminateCall()
+  }
+}
+
+function terminateCall() {
   if (currentCall.value) {
     currentCall.value.close();
     console.log('통화가 종료되었습니다.');
@@ -184,6 +196,8 @@ function endCall() {
     isWaiting.value = false; // 대기 상태 해제
   }
 }
+
+
 </script>
 
 <template>
